@@ -31,3 +31,9 @@ The source checkout must use the commit above. One pack warning is expected: the
 ## Credits
 
 Runtime copied from the `html-plan` plugin at https://github.com/anthropics/claude-plugins-community, upstream commit recorded in `UPSTREAM.md`. The repository's Apache-2.0 license is included. Changes: example-specific content, viewport metadata, and mobile spacing/touch-target overrides. No private conversations or credentials appear in the page.
+
+## Live example
+
+https://html-plan-demo.vercel.app/
+
+Verified at 1440px, 390px and 320px. Decisions update the Respond export. State changes update the screen mockup. No page errors or horizontal page overflow were found.
