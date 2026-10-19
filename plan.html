@@ -61,8 +61,9 @@ state ready # The composer accepts text.
 state pending # The composer waits for the server.
 state done final # The chat shows one validated reply.
 state failed # The chat keeps the prompt and shows Retry.
-| ready | pending |
-| failed | done |
+| ready | . |
+| pending | failed |
+| done | . |
 ready -send-> pending : Send
 pending -ok-> done : Valid
 pending -error-> failed : Error
