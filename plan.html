@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="An interactive HTML plan for the Generative UI demo. Explore proposed screens, real code, and two decisions before implementation.">
+<title>Generative UI Plan</title>
+<link rel="stylesheet" href="runtime/htmlplan.css">
+<script src="runtime/htmlplan.js" defer></script>
+<style>
+:root{--col:800px}header .guide{font-size:14px;color:var(--ink-2);margin:18px 0 24px;padding:14px 16px;border-left:3px solid var(--accent);background:var(--card)}footer{margin-top:36px!important;font-size:13px;color:var(--ink-2)}footer p{margin-bottom:8px}.nw-btn,.claim-toggle{min-height:44px}doc-code{max-width:100%}@media(max-width:600px){body{padding:24px 14px 120px}.claim-body{padding-left:8px!important}doc-ask{padding:16px 12px!important}doc-ask label{min-height:44px}doc-ask label .sug{white-space:normal}h1{font-size:30px}.nw-bar{max-width:calc(100vw - 20px)}.nw-sheet textarea{font-size:14px}footer a{overflow-wrap:anywhere}}
+</style>
+<style data-mock-shared>
+.ui{font:15px/1.5 system-ui,sans-serif;color:#17251f;background:#fff;border:1px solid #dadfdc;border-radius:12px;overflow:hidden}.hd{padding:12px 16px;border-bottom:1px solid #e6e9e7;font-weight:650}.content{padding:16px}.chip{font-size:12px;padding:4px 8px;background:#e8f0eb;color:#315c46;border-radius:5px;display:inline-block}.answer{margin-top:12px;border:1px solid #dce5df;border-radius:8px;padding:14px}.answer.generated{border:1px dashed #b07625}.label{font-size:12px;color:#67716a}.ui b{display:block;margin:5px 0}.foot{border-top:1px solid #e5e9e6;padding:12px 16px;display:flex;justify-content:space-between;font-size:13px;color:#526358}.notice{background:#f7ede5;border:1px solid #e3c4aa;border-radius:8px;padding:12px;margin-top:10px}.btn{display:inline-block;margin-top:10px;padding:8px 12px;background:#263c30;color:#fff;border-radius:6px;font-size:13px}.muted{color:#6b746e;font-size:13px}
+</style>
+<body>
+<header>
+<h1>Real Model Replies in Generative UI</h1>
+<doc-changes new="5" changed="3"></doc-changes>
+<div class="guide"><p lang="he" dir="rtl" style="margin:0 0 8px">זו תוכנית אינטראקטיבית, לא הפיצ'ר עצמו. פותחים סעיף, רואים מסך וקוד, בוחרים בין האפשרויות, ולוחצים Respond כדי להעתיק את המשוב.</p>Example plan only. No model call, API key, or paid service runs here. Open a claim. Review the two decisions. Press <b>Respond</b> to copy your feedback. Answers stay in this browser; nothing is sent.</div>
+<details class="thread"><summary>Why · source and example brief</summary>
+<doc-quote via="doc" from="generative-ui-demo README">The rendering layers don't change - only who fills the schema / writes the tree.</doc-quote>
+<p>This plan uses the public demo branch. The proposed change is an example, not an approved build.</p>
+</details>
+</header>
+<main><doc-plan>
+<doc-claim id="model-reply"><p>The user can get model replies in both UI modes.</p>
+<doc-mock frame="none" w="320" caption="Proposed screen. All values are sample data."><template><div class="ui"><div class="hd">Generative UI <span class="chip">Model mode</span></div><div class="content"><div class="muted">User: Colors for a fintech brand</div><div class="answer"><span class="label">① Library · color-palette</span><b>Clear and grounded</b><div style="display:flex;height:48px;border-radius:6px;overflow:hidden;margin:10px 0"><span style="flex:1;background:#173d30"></span><span style="flex:1;background:#b8c9ac"></span><span style="flex:1;background:#f5eee0"></span><span style="flex:1;background:#d78759"></span></div><span class="muted">Illustrative palette</span></div><div class="answer generated"><span class="label">② Generated · primitive tree</span><b>A custom view when no card fits</b><span class="muted">Uses the same safe renderer.</span></div></div><div class="foot"><span>Validated JSON</span><span>View JSON ↗</span></div></div></template></doc-mock>
+<doc-ask id="start-mode"><p>Which mode does the chat use at the start?</p><label><input type="radio" name="start-mode" value="mock" checked>Mock mode<small>No key or model cost. Model mode is opt-in.</small></label><label><input type="radio" name="start-mode" value="model">Model mode<small>Needs a server key, limits, and cost approval before use.</small></label></doc-ask>
+<doc-claim><p>The server returns data, not HTML or JavaScript.</p>
+<doc-calls title="Proposed reply path" caption="Changed calls lead to the new server route."><script type="text/plain">
+~ App.send(text)                           @ src/App.tsx:33
++   **requestReply**(text)                 @ src/agent/client.ts:1
++     POST /api/respond                   @ api/respond.ts:1
++       **validateReply**(data)            @ src/agent/validateReply.ts:1
+  render library component                @ src/App.tsx:69
+  GenerativeRenderer(node)                 @ src/agent/GenerativeRenderer.tsx:6
+</script></doc-calls>
+<doc-claim at="src/App.tsx:33"><p><b>src/App.tsx:33</b> · send()</p><doc-code src="src/App.tsx" lines="33-41" lang="ts" wrap caption="Current code calls the mock responder directly."></doc-code></doc-claim>
+</doc-claim>
+<doc-claim><p>The server must reject unknown components and invalid props.</p><doc-code title="validateReply.ts · sketch" lang="ts" wrap><script type="text/plain">
+function validateReply(raw: unknown): AgentReply {
+  // Runtime checks, not a TypeScript cast.
+  const reply = parseReplyEnvelope(raw)
+  if (reply.mode === 'library') {
+    assertKnownComponent(reply.component)
+    assertPropsMatchCatalog(reply)
+  }
+  if (reply.mode === 'generated') {
+    assertTreeLimits(reply.tree, {
+      maxDepth: 8, maxNodes: 100
+    })
+  }
+  return reply
+}
+</script></doc-code></doc-claim>
+</doc-claim>
+<doc-claim id="failure"><p>The user can retry a failed request without duplicate messages.</p>
+<doc-machine name="reply" caption="Tap a state to see its proposed screen."><script type="text/plain">
+machine reply initial ready
+state ready # The composer accepts text.
+state pending # The composer waits for the server.
+state done final # The chat shows one validated reply.
+state failed # The chat keeps the prompt and shows Retry.
+| ready | pending |
+| failed | done |
+ready -send-> pending : Send
+pending -ok-> done : Valid
+pending -error-> failed : Error
+failed -retry-> pending : Retry
+</script>
+<div data-state="ready"><doc-mock frame="none" w="300"><template><div class="ui"><div class="hd">Ready</div><div class="content">Ask anything...<div class="btn">Send</div></div></div></template></doc-mock></div>
+<div data-state="pending"><doc-mock frame="none" w="300"><template><div class="ui"><div class="hd">One request in progress</div><div class="content"><span class="chip">Waiting for reply...</span><p class="muted">Send stays disabled.</p></div></div></template></doc-mock></div>
+<div data-state="done"><doc-mock frame="none" w="300"><template><div class="ui"><div class="hd">Reply ready</div><div class="content"><div class="answer"><span class="label">① Library component</span><b>A validated result</b></div><div class="btn">View JSON</div></div></div></template></doc-mock></div>
+<div data-state="failed"><doc-mock frame="none" w="300"><template><div class="ui"><div class="hd">Your prompt stays here</div><div class="content"><div class="notice">We could not get a reply.<br>No result was added.</div><div class="btn">Retry</div></div></div></template></doc-mock></div>
+</doc-machine>
+<doc-ask id="failure-mode"><p>What happens after a model request fails?</p><label><input type="radio" name="failure-mode" value="retry" checked>Show Retry<small>Keep the error visible. No silent switch to sample data.</small></label><label><input type="radio" name="failure-mode" value="manual-mock">Offer a switch to mock mode<small>Label the next result as sample data.</small></label></doc-ask>
+<doc-claim><p>The client keeps one request active at a time.</p><doc-code title="client.ts · sketch" lang="ts" wrap><script type="text/plain">
+async function requestReply(prompt: string) {
+  const response = await fetch('/api/respond', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt }),
+    signal: AbortSignal.timeout(20_000)
+  })
+  if (!response.ok) throw new Error('Reply failed')
+  return response.json()
+}
+// App.send must block Send while pending.
+// Retry reuses the prompt, not a new user row.
+</script></doc-code></doc-claim>
+</doc-claim>
+<doc-claim id="inspect"><p>The user can inspect the data before and after rendering.</p>
+<doc-mock frame="none" w="320" caption="Proposed inspector. Sample data, not a live model result."><template><div class="ui"><div class="hd">View JSON <span class="chip">Validated</span></div><div class="content"><div class="label">Source · Model / Library</div><pre style="font:13px/1.6 monospace;white-space:pre-wrap;margin:12px 0 0">{
+  "mode": "library",
+  "component": "color-palette",
+  "props": { "colors": [] },
+  "note": "Sample payload"
+}</pre></div><div class="foot">On phones, the inspector opens below the reply.</div></div></template></doc-mock>
+<doc-claim><p>The existing reply type stays the contract.</p><doc-schema src="src/agent/types.ts" lines="60-63" lang="ts" id="reply-contract" caption="Current TypeScript type. Runtime checks must also enforce it."></doc-schema>
+<doc-claim at="src/agent/GenerativeRenderer.tsx:6"><p><b>src/agent/GenerativeRenderer.tsx:6</b> · GenerativeRenderer()</p><doc-code src="src/agent/GenerativeRenderer.tsx" lines="6-24" lang="tsx" wrap caption="Current renderer maps known node kinds to React elements."></doc-code></doc-claim>
+</doc-claim>
+</doc-claim>
+<doc-claim aux="shared"><p>Five new files support three changed files.</p><doc-tree caption="All paths below are proposed changes in the demo branch."><script type="text/plain">
+api/
+  + respond.ts              # server key; model call; request limits
+src/
+  ~ App.tsx                 # async send; retry; mock/model switch
+  ~ styles.css              # phone inspector; pending and error states
+  agent/
+    + client.ts             # request transport
+    + catalog.ts            # data-only catalog; no React imports
+    + validateReply.ts      # runtime schema and tree checks
+    + validateReply.test.ts # invalid payload and size tests
+~ package.json              # model SDK and test dependencies
+</script></doc-tree></doc-claim>
+<doc-claim aux="scope"><p>This page is a plan, not a model integration.</p><ul><li>No changes to the existing project, its branches, or its deployment.</li><li>No model account, paid call, API key, login system, or live data source.</li><li>Sample data must stay labeled. The model alone cannot supply current travel or price facts.</li><li>Before a real build: choose a provider, approve costs, and set access and request limits.</li><li>Acceptance tests: both UI modes; bad JSON; unknown components; tree depth; timeout; retry; 320px and 390px layouts.</li></ul></doc-claim>
+</doc-plan></main>
+<footer><p>Example prepared 19 October 2026. Based on <a href="https://github.com/Itamar-Dev01/generative-ui-demo/pull/1">generative-ui-demo PR #1</a>, commit <code>bbdb2dd</code>. The PR is still open.</p><p>Format and runtime: <a href="https://github.com/anthropics/claude-plugins-community">html-plan by Thariq Shihipar</a>. This is an independent example, not an Anthropic product.</p><p>Only public project code appears here. No private conversations or secrets.</p></footer>
+</body></html>
